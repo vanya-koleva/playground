@@ -1,5 +1,7 @@
 import uuid
+from datetime import date
 
+from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import UniqueConstraint
 from django.db.models.functions import Lower
@@ -94,9 +96,20 @@ class BookInstance(models.Model):
         default='m',
         help_text="Book availability"
     )
+    borrower = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    @property
+    def is_overdue(self):
+        return bool(self.due_back and date.today() > self.due_back)
 
     class Meta:
         ordering = ["due_back"]
+        permissions = (("can_mark_returned", "Set book as returned"),)
 
     def __str__(self):
         return f"{self.id} ({self.book.title})"
